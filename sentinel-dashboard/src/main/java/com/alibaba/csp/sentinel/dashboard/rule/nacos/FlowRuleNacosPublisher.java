@@ -17,14 +17,17 @@ package com.alibaba.csp.sentinel.dashboard.rule.nacos;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.FlowRuleEntity;
 import com.alibaba.csp.sentinel.dashboard.rule.DynamicRulePublisher;
 import com.alibaba.csp.sentinel.datasource.Converter;
 import com.alibaba.csp.sentinel.util.AssertUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.nacos.api.config.ConfigService;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 
 /**
  * @author Eric Zhao
@@ -46,6 +49,7 @@ public class FlowRuleNacosPublisher implements DynamicRulePublisher<List<FlowRul
         }
         
         //add by zht.去掉FlowRuleEntity中."app"."gmtCreate"."gmtModified"."id","ip","port"
+        //否则服务启动时从nacos加载限流规则报错
         for(FlowRuleEntity rule : rules) {
         	rule.setApp(null);
         	rule.setGmtCreate(null);
@@ -54,7 +58,14 @@ public class FlowRuleNacosPublisher implements DynamicRulePublisher<List<FlowRul
         	rule.setPort(null);
         	rule.setId(null);
         }
+        //add by zht.
+        String jsonFlowRule = "";
+        if(!CollectionUtils.isEmpty(rules)) {
+        	jsonFlowRule = JSON.toJSONString(rules, SerializerFeature.PrettyFormat);
+        }
         configService.publishConfig(app + NacosConfigUtil.FLOW_DATA_ID_POSTFIX,
-            NacosConfigUtil.GROUP_ID, converter.convert(rules));
+            NacosConfigUtil.GROUP_ID, jsonFlowRule);
+//        configService.publishConfig(app + NacosConfigUtil.FLOW_DATA_ID_POSTFIX,
+//                NacosConfigUtil.GROUP_ID, converter.convert(rules));
     }
 }
