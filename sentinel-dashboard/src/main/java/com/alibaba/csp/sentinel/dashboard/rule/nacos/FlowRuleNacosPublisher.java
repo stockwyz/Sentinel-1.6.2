@@ -58,7 +58,7 @@ public class FlowRuleNacosPublisher implements DynamicRulePublisher<List<FlowRul
         	rule.setPort(null);
         	rule.setId(null);
         }
-        //add by zht.
+        //add by zht.格式化后保存到nacos持久层,不乱
         String jsonFlowRule = "";
         if(!CollectionUtils.isEmpty(rules)) {
         	jsonFlowRule = JSON.toJSONString(rules, SerializerFeature.PrettyFormat);

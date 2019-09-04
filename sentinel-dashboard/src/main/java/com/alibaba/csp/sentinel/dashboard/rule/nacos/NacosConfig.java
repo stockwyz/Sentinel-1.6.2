@@ -15,6 +15,7 @@
  */
 package com.alibaba.csp.sentinel.dashboard.rule.nacos;
 
+import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Properties;
 
@@ -28,6 +29,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigFactory;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.exception.NacosException;
 
 /**
  * @author Eric Zhao
@@ -46,9 +48,20 @@ public class NacosConfig {
         return s -> JSON.parseArray(s, FlowRuleEntity.class);
     }
     
-    @Bean
+    @SuppressWarnings("rawtypes")
+	@Bean
     public ConfigService nacosConfigService(@Value("${spring.cloud.nacos.config.server-addr}") String nacosServerAddr) throws Exception {
-        return ConfigFactory.createConfigService(nacosServerAddr);
+        Properties properties = new Properties();
+        properties.put(PropertyKeyConst.SERVER_ADDR, nacosServerAddr);
+        try {
+            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
+            Constructor constructor = driverImplClass.getConstructor(Properties.class);
+            ConfigService vendorImpl = (ConfigService) constructor.newInstance(properties);
+            return vendorImpl;
+        } catch (Throwable e) {
+            throw new NacosException(-400, e.getMessage());
+        }
+//        return ConfigFactory.createConfigService(nacosServerAddr);
     }
     
 //    @Bean
