@@ -51,10 +51,16 @@ public class NacosConfig {
     @SuppressWarnings("rawtypes")
 	@Bean
     public ConfigService nacosConfigService(@Value("${spring.cloud.nacos.config.server-addr}") String nacosServerAddr) throws Exception {
+    	//modified by zht.在com.alibaba.csp.sentinel.dashboard.rule.nacos.FlowRuleNacosPublisher中
+    	//依赖NacosConfigService发布配置变更,这个类的publishConfig方法没有指定type:json.yml,properties等.而nacos
+    	//服务端的接口com.alibaba.nacos.config.server.controller中publishConfig有type参数.bullshit阿里.现自
+    	//定义类继承NacosConfigService,覆写publishConfig和publishConfigInner方法,只为了把type参数加上.以达到在
+    	//sentinel-dashboard中修入限流规则后,在nacos中配置管理查询时,可以显示出配置的type,从而在编辑器中高亮显示.
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, nacosServerAddr);
         try {
-            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
+            //Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
+        	Class<?> driverImplClass = Class.forName("com.alibaba.csp.sentinel.dashboard.sicily.config.SicilyNacosConfigService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             ConfigService vendorImpl = (ConfigService) constructor.newInstance(properties);
             return vendorImpl;
